@@ -1,0 +1,28 @@
+[project]
+name = "hdclear"
+version = "0.1.0"
+description = "Wipe, surface-test and ext4-format an external disk before using it for backups"
+readme = "README.md"
+authors = [
+    { name = "Marius Kleiner", email = "kleiner@gmail.com" }
+]
+requires-python = ">=3.11"
+dependencies = [
+    "rich>=15.0.0",
+]
+
+[project.scripts]
+hdclear = "hdclear.cli:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[dependency-groups]
+dev = [
+    "pytest>=9.2.0",
+    "ruff>=0.17.5",
+]
+
+[tool.ruff]
+line-length = 110
