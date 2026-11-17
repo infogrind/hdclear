@@ -15,8 +15,8 @@ from rich.markup import escape
 from rich.panel import Panel
 from rich.progress import (
     BarColumn,
-    DownloadColumn,
     Progress,
+    ProgressColumn,
     TaskProgressColumn,
     TextColumn,
     TimeElapsedColumn,
@@ -216,8 +216,6 @@ def show_report(
     safety: SafetyReport,
     smart_problems: Sequence[str],
 ) -> None:
-    console.print(steps_line("Inspect", []))
-    console.print()
     console.print(identity_panel(disk, smart))
     if not disk.partitions:
         console.print(Text("  No partition table.", style="dim"))
@@ -243,6 +241,13 @@ def confirm(disk: Disk, code: str, code_source: str, plan: Sequence[str]) -> boo
 
 
 # -- live surface-test display ----------------------------------------------
+
+
+class BytesColumn(ProgressColumn):
+    """'20.5 GB/1.0 TB': unlike rich's DownloadColumn, each side picks its own unit."""
+
+    def render(self, task) -> Text:
+        return Text(f"{human(int(task.completed))}/{human(int(task.total or 0))}", style="progress.download")
 
 
 class SurfaceMap:
@@ -304,7 +309,7 @@ class SurfaceMonitor:
             TextColumn("[bold]{task.description:<7}"),
             BarColumn(bar_width=None, complete_style=ACCENT, finished_style="green"),
             TaskProgressColumn(),
-            DownloadColumn(binary_units=False),
+            BytesColumn(),
             TransferSpeedColumn(),
             TextColumn("[dim]elapsed[/]"),
             TimeElapsedColumn(),

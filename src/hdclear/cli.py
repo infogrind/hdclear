@@ -262,7 +262,6 @@ def _wipe_and_test(
         )
         return EXIT_DISK_FAILED
 
-    ui.console.print(ui.steps_line("Format", done))
     with ui.console.status("Creating GPT partition table and ext4 filesystem…"):
         formatter.partition(disk)
         part = formatter.reread_partitions(disk)
