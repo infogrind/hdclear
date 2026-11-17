@@ -57,3 +57,27 @@ def test_swap_and_holders_block():
 
 def test_zero_size_blocks():
     assert not check_disk(make_disk(size=0, partitions=[]), state()).ok
+
+
+def test_container_manager_bind_mount_of_usb_share_is_a_warning():
+    # DSM 7.2 names USB disks usbN and Container Manager re-mounts their shares.
+    disk = make_disk(name="usb2", partitions=[Partition("usb2p1", Path("/dev/usb2p1"), 10)])
+    mounts = [
+        Mount("usb2p1", "/volumeUSB2/usbshare", "ext4"),
+        Mount("usb2p1", "/volume1/@appdata/ContainerManager/all_shares/usbshare1", "ext4"),
+    ]
+
+    report = check_disk(disk, state(mounts))
+
+    assert report.ok
+    assert "second mount" in report.warnings[1]
+
+
+def test_second_mount_on_system_path_still_blocks():
+    mounts = [Mount("sdq1", "/volumeUSB1/usbshare", "ext4"), Mount("sdq1", "/volume1", "ext4")]
+    assert not check_disk(make_disk(), state(mounts)).ok
+
+
+def test_non_removable_mount_without_usb_mount_blocks():
+    mounts = [Mount("sdq1", "/volume1/@appdata/ContainerManager/all_shares/usbshare1", "ext4")]
+    assert not check_disk(make_disk(), state(mounts)).ok

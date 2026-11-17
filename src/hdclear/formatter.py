@@ -30,7 +30,8 @@ def unmount(mounts: list[Mount]) -> None:
         if proc.returncode != 0:
             raise HdclearError(
                 f"could not unmount {m.mountpoint}: {(proc.stderr or proc.stdout).strip()}\n"
-                "Close whatever uses it (or eject it in DSM's External Devices panel) and retry."
+                "Close whatever uses it (e.g. stop Container Manager containers that use the USB "
+                "share) and retry. Don't use DSM's Eject: that detaches the disk entirely."
             )
 
 

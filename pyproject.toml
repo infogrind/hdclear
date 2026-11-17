@@ -1,6 +1,6 @@
 [project]
 name = "hdclear"
-version = "0.1.0"
+version = "0.1.1"
 description = "Wipe, surface-test and ext4-format an external disk before using it for backups"
 readme = "README.md"
 authors = [

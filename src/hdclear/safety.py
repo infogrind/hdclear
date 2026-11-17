@@ -6,6 +6,7 @@ shown prominently in the pre-wipe report but don't stop anything.
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass, field
 
 from .disks import Disk, SystemState, mounts_of
@@ -13,6 +14,14 @@ from .disks import Disk, SystemState, mounts_of
 # Mount points under these prefixes belong to removable media; hdclear will
 # unmount them itself. Anything mounted elsewhere is part of the running system.
 REMOVABLE_MOUNT_PREFIXES = ("/volumeUSB", "/volumeSATA", "/media/", "/mnt/", "/run/media/")
+
+# Mount points that are always part of the running system, even for a disk that
+# is also mounted somewhere removable.
+_SYSTEM_MOUNT = re.compile(r"^/(?:|boot|usr|var|etc|opt|home|root|volume\d+)$")
+
+
+def is_removable_mount(mountpoint: str) -> bool:
+    return mountpoint.startswith(REMOVABLE_MOUNT_PREFIXES)
 
 
 @dataclass
@@ -52,10 +61,19 @@ def check_disk(disk: Disk, state: SystemState, allow_internal: bool = False) -> 
     for name in sorted(disk.all_names & state.swaps):
         report.blockers.append(f"{name} is active swap space")
 
-    for mount in mounts_of(disk, state):
-        if mount.mountpoint.startswith(REMOVABLE_MOUNT_PREFIXES):
+    mounts = mounts_of(disk, state)
+    removable_devices = {m.device for m in mounts if is_removable_mount(m.mountpoint)}
+    for mount in mounts:
+        if is_removable_mount(mount.mountpoint):
             report.warnings.append(
                 f"{mount.device} is mounted at {mount.mountpoint}; it will be unmounted"
+            )
+        elif mount.device in removable_devices and not _SYSTEM_MOUNT.match(mount.mountpoint):
+            # A second view of a removable mount, e.g. DSM's Container Manager
+            # bind-mounting USB shares under /volume1/@appdata/ContainerManager/.
+            report.warnings.append(
+                f"{mount.device} is also mounted at {mount.mountpoint} "
+                "(a second mount of the same USB partition); it will be unmounted"
             )
         else:
             report.blockers.append(
